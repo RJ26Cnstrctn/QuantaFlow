@@ -1,2 +1,0 @@
-# QuantaFlow
-QuantaFlow Services
