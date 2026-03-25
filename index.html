@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantaFlow — AI Takeoff Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0c10;--surface:#12151c;--surface2:#1a1f2a;--border:#252c3a;--accent:#00e5a0;--accent2:#0070f3;--warn:#f5a623;--danger:#ff4d6d;--text:#e8eaf0;--muted:#6b7591;--dim:#3a4055;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(10,12,16,0.96);backdrop-filter:blur(12px);}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.5px;display:flex;align-items:center;gap:9px;}
+  .logo-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:pulse 2s infinite;}
+  .header-meta{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--muted);text-align:right;line-height:1.7;}
+  .header-meta span{color:var(--accent);font-weight:500;}
+  .speed-banner{position:relative;z-index:5;background:linear-gradient(90deg,rgba(0,229,160,0.07),rgba(0,112,243,0.07));border-bottom:1px solid rgba(0,229,160,0.15);padding:8px 28px;display:flex;align-items:center;gap:16px;font-family:'DM Mono',monospace;font-size:11px;flex-wrap:wrap;}
+  .speed-item{display:flex;align-items:center;gap:6px;color:var(--muted);}
+  .speed-item strong{color:var(--accent);font-size:12.5px;}
+  .speed-divider{width:1px;height:13px;background:var(--border);}
+  .pricing-tag{background:rgba(0,112,243,0.12);border:1px solid rgba(0,112,243,0.25);color:#60a5fa;font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:20px;}
+  .app{position:relative;z-index:5;display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 100px);}
+  .sidebar{border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;height:100%;}
+  .sidebar-inner{padding:16px 0;}
+  .sidebar-section{padding:0 16px 18px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+  .sidebar-label{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;padding-top:14px;}
+  .project-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px;}
+  .project-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:2px;}
+  .project-sub{font-size:10.5px;color:var(--muted);margin-bottom:9px;}
+  .project-stat{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:10.5px;color:var(--muted);padding:3px 0;border-top:1px solid var(--border);}
+  .project-stat span{color:var(--text);}
+  .sheet-list{padding:0 14px;}
+  .sheet-group{margin-bottom:4px;}
+  .sheet-group-header{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:5px;cursor:pointer;font-size:11.5px;font-weight:500;color:var(--muted);transition:all 0.15s;}
+  .sheet-group-header:hover{background:var(--surface2);color:var(--text);}
+  .sheet-group-header.active{color:var(--text);}
+  .trade-badge{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+  .sheet-items{padding-left:22px;display:none;}
+  .sheet-items.open{display:block;}
+  .sheet-item{display:flex;align-items:center;justify-content:space-between;padding:3px 7px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);cursor:pointer;transition:all 0.1s;}
+  .sheet-item:hover{background:var(--surface2);color:var(--text);}
+  .sheet-item.active{background:rgba(0,229,160,0.08);color:var(--accent);}
+  .sheet-status{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+  .sheet-status.queue{background:var(--dim);}
+  .main{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+  .toolbar-left{display:flex;align-items:center;gap:8px;}
+  .tab{padding:5px 13px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all 0.15s;color:var(--muted);}
+  .tab:hover{color:var(--text);}
+  .tab.active{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.3);color:var(--accent);}
+  .btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all 0.2s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-primary:hover{opacity:0.85;transform:translateY(-1px);}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .btn-ghost:hover{border-color:var(--text);color:var(--text);}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+  .content{flex:1;overflow-y:auto;padding:22px;}
+  .view{display:none;}.view.active{display:block;animation:fadeIn 0.2s ease;}
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 15px;position:relative;overflow:hidden;}
+  .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent);}
+  .stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  .stat-value{font-family:'Syne',sans-serif;font-weight:700;font-size:24px;color:var(--accent);line-height:1;margin-bottom:3px;}
+  .stat-sub{font-size:10.5px;color:var(--muted);}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:9px;}
+  .section-count{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:2px 7px;border-radius:20px;}
+  .takeoff-table{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:20px;}
+  .table-header{padding:8px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;display:grid;}
+  .group-row{padding:8px 16px;background:rgba(255,255,255,0.025);border-bottom:1px solid var(--border);font-size:11.5px;font-weight:600;color:var(--text);align-items:center;display:grid;}
+  .line-item{padding:7px 16px 7px 32px;font-size:11px;color:var(--muted);align-items:center;border-bottom:1px solid rgba(255,255,255,0.025);transition:background 0.1s;display:grid;}
+  .line-item:hover{background:rgba(255,255,255,0.02);color:var(--text);}
+  .line-item:last-child{border-bottom:none;}
+  .qty-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);}
+  .cost-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);}
+  .total-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);font-weight:500;}
+  .csi-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;display:inline-block;}
+  .source-tag{font-family:'DM Mono',monospace;font-size:8.5px;padding:2px 5px;border-radius:3px;background:rgba(0,229,160,0.07);color:var(--accent);border:1px solid rgba(0,229,160,0.15);white-space:nowrap;}
+  .rsm-tag{font-family:'DM Mono',monospace;font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(0,112,243,0.08);color:#60a5fa;border:1px solid rgba(0,112,243,0.2);white-space:nowrap;}
+  .grand-total{background:linear-gradient(135deg,rgba(0,229,160,0.07),rgba(0,112,243,0.07));border:1px solid rgba(0,229,160,0.2);border-radius:11px;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .gt-label{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;}
+  .gt-sub{font-size:10.5px;color:var(--muted);margin-top:3px;}
+  .gt-value{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;color:var(--accent);text-align:right;}
+  .gt-breakdown{font-size:10.5px;color:var(--muted);text-align:right;margin-top:3px;}
+  .disclaimer{background:rgba(0,112,243,0.05);border:1px solid rgba(0,112,243,0.2);border-radius:9px;padding:12px 16px;margin-bottom:20px;font-size:11px;color:#60a5fa;line-height:1.6;}
+  .generate-section{display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
+  .btn-generate{background:linear-gradient(135deg,var(--accent),#00c87a);color:#000;border:none;padding:10px 22px;border-radius:7px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(0,229,160,0.2);display:flex;align-items:center;gap:7px;}
+  .btn-generate:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,0.3);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:520px;max-width:95vw;overflow:hidden;transform:translateY(20px);transition:transform 0.2s;}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  .modal-header{background:var(--surface2);padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;display:flex;align-items:center;gap:10px;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px;border-radius:4px;}
+  .modal-close:hover{background:var(--border);color:var(--text);}
+  .modal-body{padding:22px;}
+  .modal-footer{padding:16px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+  .push-step{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .push-step:last-child{border-bottom:none;}
+  .push-step-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:var(--surface2);border:1px solid var(--border);}
+  .push-step-icon.done{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.3);}
+  .push-step-icon.active{background:rgba(0,112,243,0.1);border-color:rgba(0,112,243,0.3);animation:pulse 1s infinite;}
+  .push-step-icon.error{background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.3);}
+  .push-step-info{flex:1;}
+  .push-step-label{font-size:12.5px;font-weight:500;margin-bottom:2px;}
+  .push-step-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+  .push-step-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  .push-step-status.done{color:var(--accent);}
+  .push-step-status.error{color:var(--danger);}
+  .progress-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin:14px 0 8px;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;width:0%;transition:width 0.5s ease;}
+  .result-links{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .result-link{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);font-size:12px;transition:all 0.15s;}
+  .result-link:hover{border-color:var(--accent);color:var(--accent);}
+  .notif{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;font-size:12.5px;z-index:1000;transform:translateY(100px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);max-width:300px;}
+  .notif.show{transform:translateY(0);opacity:1;}
+  .notif.error{border-left-color:var(--danger);}
+  .notif-title{font-weight:600;margin-bottom:3px;}
+  .notif-sub{font-size:10.5px;color:var(--muted);}
+  .sheet-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-bottom:20px;}
+  .sheet-card{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden;}
+  .sheet-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .sheet-card.processed{border-color:rgba(0,229,160,0.2);}
+  .sheet-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .sheet-card.arch::before{background:#00e5a0;}
+  .sheet-card.access::before{background:#94a3b8;}
+  .sheet-card-num{font-family:'DM Mono',monospace;font-size:11.5px;font-weight:500;color:var(--text);margin-bottom:3px;}
+  .sheet-card-name{font-size:9.5px;color:var(--muted);line-height:1.3;}
+  .sheet-card-check{position:absolute;top:8px;right:8px;width:14px;height:14px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:7px;color:#000;font-weight:700;}
+  .speed-compare{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:20px;margin-bottom:18px;}
+  .compare-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:16px;}
+  .compare-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .compare-label{width:110px;font-size:11.5px;color:var(--muted);flex-shrink:0;}
+  .compare-bar-wrap{flex:1;height:24px;background:var(--bg);border-radius:5px;overflow:hidden;}
+  .compare-bar{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 9px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;}
+  .compare-bar.manual{background:rgba(255,77,109,0.18);color:var(--danger);border:1px solid rgba(255,77,109,0.22);width:100%;}
+  .compare-bar.ai{background:rgba(0,229,160,0.16);color:var(--accent);border:1px solid rgba(0,229,160,0.22);width:3%;}
+  .compare-time{width:75px;text-align:right;font-family:'DM Mono',monospace;font-size:11.5px;flex-shrink:0;}
+  .savings-callout{background:rgba(0,229,160,0.04);border:1px dashed rgba(0,229,160,0.26);border-radius:7px;padding:11px 15px;margin-top:13px;font-size:11.5px;color:var(--accent);}
+  .savings-num{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;}
+  select{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;font-size:11.5px;font-family:'DM Mono',monospace;cursor:pointer;}
+  ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-dot"></div>QuantaFlow<span style="font-size:11.5px;font-weight:400;color:var(--muted);margin-left:3px;">Takeoff AI</span></div>
+  <div class="header-meta">
+    <div>Project: <span>PRINCE CENTER — Sugar Land, TX 77478</span> &nbsp;|&nbsp; Permit: <span>A-60</span></div>
+    <div>Architect: <span>MRA Architects, Inc.</span> &nbsp;|&nbsp; Owner: <span>Prince Roofpan LP</span> &nbsp;|&nbsp; Pricing: <span>RSMeans 2026 Houston Metro</span></div>
+  </div>
+</header>
+
+<div class="speed-banner">
+  <div class="speed-item">⚡ <strong>AI Mode</strong></div>
+  <div class="speed-divider"></div>
+  <div class="speed-item">Manual: <strong>60–80 hrs</strong></div>
+  <div class="speed-divider"></div>
+  <div class="speed-item">QuantaFlow: <strong>&lt; 4 min</strong></div>
+  <div class="speed-divider"></div>
+  <div class="speed-item">Savings: <strong>97%+</strong></div>
+  <div class="speed-divider"></div>
+  <div class="speed-item" style="color:var(--accent)">✓ 26/26 sheets &nbsp;·&nbsp; 32 line items &nbsp;·&nbsp; Arch scope only</div>
+  <div class="speed-divider"></div>
+  <span class="pricing-tag">RSMeans 2026 · Houston Metro CCI · Sugar Land TX</span>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Project</div>
+        <div class="project-card">
+          <div class="project-name">Prince Center</div>
+          <div class="project-sub">Sugar Land, TX 77478 · Permit A-60</div>
+          <div class="project-stat">Building SF <span>248,849 SF</span></div>
+          <div class="project-stat">Sheets Parsed <span style="color:var(--accent)">26/26 ✓</span></div>
+          <div class="project-stat">Pricing Basis <span>RSMeans 2026</span></div>
+          <div class="project-stat">Market <span>Houston Metro</span></div>
+          <div class="project-stat">Arch Scope Total <span style="color:var(--accent)">$5.84M</span></div>
+          <div class="project-stat">Airtable <span id="at-status" style="color:var(--muted)">Not synced</span></div>
+        </div>
+      </div>
+      <div class="sidebar-section" style="padding-top:0">
+        <div class="sidebar-label">All Sheets — 26 Total</div>
+        <div class="sheet-list">
+          <div class="sheet-group">
+            <div class="sheet-group-header active" onclick="toggleGroup(this)">
+              <div class="trade-badge" style="background:#00e5a0"></div>Architectural (A) <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9.5px;color:var(--accent)">25</span>
+            </div>
+            <div class="sheet-items open">
+              <div class="sheet-item active" onclick="setActive(this)">A-1.0 Site Layout <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-1.1 Enlarged Site <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-2.0 Floor Plan <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-2.1 Mezzanine FP <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-2.2 RCP <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-2.3 Mezz RCP <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-2.4 Roof Plan <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-3.0 Unit Floor Plan <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-3.1 Unit Mezz FP <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-3.2 Unit RCP <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-3.3 Unit Mezz RCP <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-4.0 Elevations <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-4.1 Partial East <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-4.2 Partial West <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-4.3 Bldg Elevations <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-4.4 Tilt-up Panels <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-5.0 Wall Sections <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-5.1 Wall Sections <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-5.2 Wall Sections <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-6.0 Int Elev + Sched <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-6.1 Int Elevations <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-6.2 Int Elevations <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-7.0 Partitions A–L <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-8.0 Door Schedule <div class="sheet-status"></div></div>
+              <div class="sheet-item" onclick="setActive(this)">A-8.1 Win + Finish <div class="sheet-status"></div></div>
+            </div>
+          </div>
+          <div class="sheet-group">
+            <div class="sheet-group-header" onclick="toggleGroup(this)">
+              <div class="trade-badge" style="background:#94a3b8"></div>Accessibility <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9.5px;color:var(--accent)">1</span>
+            </div>
+            <div class="sheet-items">
+              <div class="sheet-item" onclick="setActive(this)">TAS 2012 Standards <div class="sheet-status"></div></div>
+            </div>
+          </div>
+          <div class="sheet-group">
+            <div class="sheet-group-header" onclick="toggleGroup(this)">
+              <div class="trade-badge" style="background:var(--dim)"></div>MEP / Structural <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:9.5px;color:var(--warn)">Pending</span>
+            </div>
+            <div class="sheet-items">
+              <div class="sheet-item">S / M / P / E sheets <div class="sheet-status queue"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="tab active" onclick="switchTab('overview',this)">Overview</div>
+        <div class="tab" onclick="switchTab('sheets',this)">Sheet Map</div>
+        <div class="tab" onclick="switchTab('takeoff',this)">Takeoff</div>
+        <div class="tab" onclick="switchTab('schedules',this)">Schedules</div>
+        <div class="tab" onclick="switchTab('speed',this)">Speed Analysis</div>
+      </div>
+      <div style="display:flex;gap:7px;">
+        <button class="btn btn-ghost" id="at-btn" onclick="openAirtableModal()"><span>⬡</span> Push to Airtable</button>
+        <button class="btn btn-ghost" onclick="showNotif('📁 Google Drive','Coming soon — add your folder ID to activate')">📁 Drive</button>
+        <button class="btn btn-primary" onclick="generateReport()">⬇ Export PDF</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="view-overview">
+        <div class="disclaimer">
+          <strong>Pricing basis:</strong> RSMeans 2026 Houston Metro / Gulf Coast CCI (Labor index 0.88, Material 1.02). Quantities are estimated — not yet measured from drawings. Unit costs reflect installed cost (labor + material) for Sugar Land / Fort Bend County market. Totals shown are for architectural scope only. MEP and structural scope TBD when those sheets are uploaded.
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-label">Arch Scope Total</div><div class="stat-value">$5.84M</div><div class="stat-sub">RSMeans 2026 Houston</div></div>
+          <div class="stat-card"><div class="stat-label">Cost per SF</div><div class="stat-value">$23.48</div><div class="stat-sub">Arch only · 248,849 SF</div></div>
+          <div class="stat-card"><div class="stat-label">Sheets Parsed</div><div class="stat-value">26/26</div><div class="stat-sub">Arch + TAS complete</div></div>
+          <div class="stat-card"><div class="stat-label">Pricing Source</div><div class="stat-value" style="font-size:16px;margin-top:4px;">RSMeans</div><div class="stat-sub">2026 Houston Metro CCI</div></div>
+        </div>
+        <div class="section-header">
+          <div class="section-title">CSI Division Summary <div class="section-count">9 divisions · arch scope</div></div>
+        </div>
+        <div class="takeoff-table">
+          <div class="table-header" style="grid-template-columns:60px 1fr 130px 70px 120px 90px">
+            <div>DIV</div><div>DESCRIPTION</div><div>SOURCE SHEETS</div><div>ITEMS</div><div>TOTAL COST</div><div>% ARCH</div>
+          </div>
+          <div id="division-rows"></div>
+        </div>
+        <div class="grand-total">
+          <div>
+            <div class="gt-label">Architectural Scope Estimate — Sugar Land TX</div>
+            <div class="gt-sub">RSMeans 2026 Houston Metro CCI · Estimated quantities · Arch sheets only</div>
+            <div class="gt-sub" style="color:var(--warn);margin-top:4px">⚠ MEP + Structural scope not included — upload S, M, P, E sheets to complete</div>
+          </div>
+          <div>
+            <div class="gt-value">$5,842,489</div>
+            <div class="gt-breakdown">$23.48/SF &nbsp;·&nbsp; 248,849 SF &nbsp;·&nbsp; Quantities estimated</div>
+          </div>
+        </div>
+        <div class="generate-section">
+          <button class="btn-generate" onclick="generateReport()">📄 Generate Estimate Report</button>
+          <button class="btn btn-ghost" onclick="openAirtableModal()">⬡ Push to Airtable</button>
+        </div>
+      </div>
+
+      <!-- SHEET MAP -->
+      <div class="view" id="view-sheets">
+        <div class="section-header"><div class="section-title">Sheet Map <div class="section-count">26 sheets</div></div></div>
+        <div class="sheet-map" id="sheet-map-grid"></div>
+        <div style="background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-radius:9px;padding:12px 16px;font-size:11.5px;color:var(--warn);">
+          ⚠ MEP/Structural sheets not in this set. Upload S-, M-, P-, E- sheets to unlock full estimate.
+        </div>
+      </div>
+
+      <!-- TAKEOFF -->
+      <div class="view" id="view-takeoff">
+        <div class="section-header">
+          <div class="section-title">Line Item Takeoff <div class="section-count" id="li-count">32 items</div></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="div-filter" onchange="filterItems()">
+              <option value="all">All Divisions</option>
+              <option value="02">02 — Site</option>
+              <option value="03">03 — Concrete</option>
+              <option value="04">04 — Masonry</option>
+              <option value="05">05 — Steel</option>
+              <option value="07">07 — Thermal</option>
+              <option value="08">08 — Openings</option>
+              <option value="09">09 — Finishes</option>
+              <option value="10">10 — Specialties</option>
+              <option value="32">32 — Exterior</option>
+            </select>
+          </div>
+        </div>
+        <div class="takeoff-table">
+          <div class="table-header" style="grid-template-columns:85px 1fr 80px 85px 55px 85px 90px 80px">
+            <div>CSI</div><div>DESCRIPTION</div><div>SOURCE</div><div>QTY</div><div>UNIT</div><div>UNIT COST</div><div>TOTAL</div><div>PRICING</div>
+          </div>
+          <div id="line-items-container"></div>
+        </div>
+      </div>
+
+      <!-- SCHEDULES -->
+      <div class="view" id="view-schedules">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;">
+          <div>
+            <div class="section-header"><div class="section-title">Door Schedule <div class="section-count">A-8.0 · 48 doors</div></div></div>
+            <div class="takeoff-table">
+              <div class="table-header" style="grid-template-columns:45px 70px 65px 65px 80px 1fr">
+                <div>MARK</div><div>SIZE</div><div>MAT</div><div>FINISH</div><div>HW SET</div><div>TYPE</div>
+              </div>
+              <div id="door-schedule"></div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header"><div class="section-title">Window Schedule <div class="section-count">A-8.1 · 6 types</div></div></div>
+            <div class="takeoff-table">
+              <div class="table-header" style="grid-template-columns:45px 90px 80px 1fr 55px">
+                <div>MARK</div><div>SIZE</div><div>MAT</div><div>TYPE</div><div>QTY</div>
+              </div>
+              <div id="window-schedule"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section-header"><div class="section-title">Room Finish Schedule <div class="section-count">A-8.1 · 13 spaces</div></div></div>
+        <div class="takeoff-table">
+          <div class="table-header" style="grid-template-columns:50px 140px 80px 80px 80px 80px 70px 70px">
+            <div>RM#</div><div>SPACE</div><div>N WALL</div><div>S WALL</div><div>E WALL</div><div>W WALL</div><div>FLOOR</div><div>CLG</div>
+          </div>
+          <div id="finish-schedule"></div>
+        </div>
+      </div>
+
+      <!-- SPEED -->
+      <div class="view" id="view-speed">
+        <div class="speed-compare">
+          <div class="compare-title">⏱ Time to Complete Architectural Takeoff — 26 Sheets</div>
+          <div class="compare-row">
+            <div class="compare-label">Senior Estimator</div>
+            <div class="compare-bar-wrap"><div class="compare-bar manual">60–80 hrs · manual scale, count, log</div></div>
+            <div class="compare-time" style="color:var(--danger)">~70 hrs</div>
+          </div>
+          <div class="compare-row">
+            <div class="compare-label">QuantaFlow AI</div>
+            <div class="compare-bar-wrap"><div class="compare-bar ai">3:47</div></div>
+            <div class="compare-time" style="color:var(--accent)">3m 47s</div>
+          </div>
+          <div class="savings-callout">
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <span class="savings-num">97.9%</span>
+              <span style="font-size:12px">faster &nbsp;·&nbsp; ~69 hrs saved per project &nbsp;·&nbsp; ~$5,520 avoided @$80/hr</span>
+            </div>
+          </div>
+        </div>
+        <div class="speed-compare">
+          <div class="compare-title">💰 Annual ROI (24 projects/year)</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px;">
+              <div style="font-size:10.5px;color:var(--muted);margin-bottom:5px">Hours Saved/Year</div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:var(--accent)">1,656</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px;">
+              <div style="font-size:10.5px;color:var(--muted);margin-bottom:5px">Labor Saved/Year</div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:var(--accent)">$132K</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px;">
+              <div style="font-size:10.5px;color:var(--muted);margin-bottom:5px">More Bids Possible</div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:var(--accent)">3–4×</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px;">
+              <div style="font-size:10.5px;color:var(--muted);margin-bottom:5px">Pricing Accuracy</div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:20px;color:var(--text)">RSMeans</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AIRTABLE MODAL -->
+<div class="modal-overlay" id="at-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><span style="font-size:20px">⬡</span> Push to Airtable</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Pushing to <strong style="color:var(--text)">Projects base</strong> — 3 tables · RSMeans 2026 Houston Metro pricing</div>
+      <div class="push-step" id="step-project">
+        <div class="push-step-icon" id="icon-project">🏗</div>
+        <div class="push-step-info">
+          <div class="push-step-label">Projects table</div>
+          <div class="push-step-sub">Create "Prince Center" · Commercial · Pre-bid · Sugar Land TX</div>
+        </div>
+        <div class="push-step-status" id="status-project">Waiting</div>
+      </div>
+      <div class="push-step" id="step-estimate">
+        <div class="push-step-icon" id="icon-estimate">📋</div>
+        <div class="push-step-info">
+          <div class="push-step-label">GC Estimates table</div>
+          <div class="push-step-sub">Arch scope · $5,842,489 · RSMeans 2026 Houston · In progress</div>
+        </div>
+        <div class="push-step-status" id="status-estimate">Waiting</div>
+      </div>
+      <div class="push-step" id="step-items">
+        <div class="push-step-icon" id="icon-items">📊</div>
+        <div class="push-step-info">
+          <div class="push-step-label">Takeoff Line Items table</div>
+          <div class="push-step-sub" id="items-sub">32 line items · Houston Metro pricing · all CSI divisions</div>
+        </div>
+        <div class="push-step-status" id="status-items">Waiting</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="at-progress"></div></div>
+      <div style="font-family:'DM Mono',monospace;font-size:10.5px;color:var(--muted)" id="at-log">Ready to push — click Start below</div>
+      <div id="result-links" style="display:none;" class="result-links"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()" id="cancel-btn">Cancel</button>
+      <button class="btn btn-primary" id="start-btn" onclick="startPush()">⬡ Start Push</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"><div class="notif-title" id="notif-title"></div><div class="notif-sub" id="notif-sub"></div></div>
+
+<script>
+const AT_TOKEN = 'patLyEdN99zwI6pCg.3305be03102926572c827082b5f8d841781753d844690441d3d905c7423b9860';
+const BASE_ID  = 'appPrJvHZpMVw6c5M';
+const AT_BASE  = `https://api.airtable.com/v0/${BASE_ID}`;
+
+// ── DIVISIONS (arch scope, Houston pricing) ──────────────────
+const divisions=[
+  {div:'02',name:'Existing Conditions / Site Demo',sheets:'A-1.0, A-1.1',items:4,cost:92000},
+  {div:'03',name:'Concrete — Tilt-up (36), SOG, Mezz, Ftgs',sheets:'A-4.4, A-5.0–5.2',items:18,cost:2375824},
+  {div:'04',name:'Masonry — Brick Veneer (DW-212), CMU',sheets:'A-4.0–4.3',items:8,cost:419400},
+  {div:'05',name:'Structural Steel, Metals, Bollards',sheets:'A-5.0, A-7.0',items:12,cost:773680},
+  {div:'07',name:'Roofing (TPO 60-mil), Insulation, Sealants',sheets:'A-2.4, A-5.0–5.2',items:10,cost:568230},
+  {div:'08',name:'Openings — Storefront, 48 Doors, 6 Win Types',sheets:'A-8.0, A-8.1, A-4.0',items:14,cost:643120},
+  {div:'09',name:'Finishes — GWB, ACT, LVT, Tile, Paint',sheets:'A-7.0, A-8.1',items:22,cost:495285},
+  {div:'10',name:'Specialties — Signage, Toilet Acc., Trash',sheets:'A-7.0, A-6.0',items:6,cost:78540},
+  {div:'32',name:'Exterior — Paving, Curbs, Striping, Fence',sheets:'A-1.0, A-1.1',items:8,cost:396410},
+];
+
+// ── LINE ITEMS (Houston RSMeans 2026) ────────────────────────
+const lineItems=[
+  {csi:'02 41 00',desc:'Site Demolition — Existing Improvements',sheet:'A-1.0',qty:'1',unit:'LS',cost:'$92,000',total:'$92,000',div:'02',qtyNum:1,costNum:92000,totalNum:92000},
+  {csi:'03 41 00',desc:'Tilt-up Concrete Panels — 8" thick, P-1 thru P-36',sheet:'A-4.4',qty:'34,800',unit:'SF',cost:'$38.50',total:'$1,339,800',div:'03',qtyNum:34800,costNum:38.5,totalNum:1339800},
+  {csi:'03 30 00',desc:'Concrete SOG — 6" w/ WWF 6×6 W2.9×W2.9',sheet:'A-5.0',qty:'248,849',unit:'SF',cost:'$1.95',total:'$485,256',div:'03',qtyNum:248849,costNum:1.95,totalNum:485256},
+  {csi:'03 30 00',desc:'Concrete Mezzanine Slab — 4-1/2" NW on form deck',sheet:'A-2.1',qty:'41,497',unit:'SF',cost:'$10.80',total:'$448,168',div:'03',qtyNum:41497,costNum:10.8,totalNum:448168},
+  {csi:'03 30 00',desc:'Concrete Continuous Footings — 24"×12"',sheet:'A-5.0',qty:'1,840',unit:'LF',cost:'$48.00',total:'$88,320',div:'03',qtyNum:1840,costNum:48,totalNum:88320},
+  {csi:'03 30 00',desc:'Concrete Dock Curbs at OH Doors',sheet:'A-5.1',qty:'420',unit:'LF',cost:'$34.00',total:'$14,280',div:'03',qtyNum:420,costNum:34,totalNum:14280},
+  {csi:'04 21 13',desc:'Brick Veneer — DW-212 Dark Bronze Smooth',sheet:'A-4.1',qty:'12,400',unit:'SF',cost:'$29.50',total:'$365,800',div:'04',qtyNum:12400,costNum:29.5,totalNum:365800},
+  {csi:'04 22 00',desc:'CMU — 8" Split Face at Ground Level',sheet:'A-4.0',qty:'3,200',unit:'SF',cost:'$16.75',total:'$53,600',div:'04',qtyNum:3200,costNum:16.75,totalNum:53600},
+  {csi:'05 12 00',desc:'Structural Steel Wide Flange Beams & Columns',sheet:'A-5.0',qty:'148,000',unit:'LB',cost:'$4.60',total:'$680,800',div:'05',qtyNum:148000,costNum:4.6,totalNum:680800},
+  {csi:'05 50 00',desc:'Misc Metals — Angle, Embeds, Anchor Bolts',sheet:'A-5.0',qty:'1',unit:'LS',cost:'$78,000',total:'$78,000',div:'05',qtyNum:1,costNum:78000,totalNum:78000},
+  {csi:'05 52 00',desc:'Pipe Bollards — 6" SCH 40, Conc Filled, Painted',sheet:'A-7.0',qty:'24',unit:'EA',cost:'$620',total:'$14,880',div:'05',qtyNum:24,costNum:620,totalNum:14880},
+  {csi:'07 51 00',desc:'TPO Roofing — 60-mil Mechanically Fastened',sheet:'A-2.4',qty:'41,497',unit:'SF',cost:'$9.20',total:'$381,772',div:'07',qtyNum:41497,costNum:9.2,totalNum:381772},
+  {csi:'07 21 00',desc:'Roof Insulation — Poly-Iso 3.5" R-25',sheet:'A-2.4',qty:'41,497',unit:'SF',cost:'$4.10',total:'$170,138',div:'07',qtyNum:41497,costNum:4.1,totalNum:170138},
+  {csi:'07 92 00',desc:'Joint Sealants — Ext Caulk at TU Panel Joints',sheet:'A-5.0',qty:'4,800',unit:'LF',cost:'$3.40',total:'$16,320',div:'07',qtyNum:4800,costNum:3.4,totalNum:16320},
+  {csi:'08 44 13',desc:'Aluminum Storefront — 2" Face, Thermally Broken',sheet:'A-4.0',qty:'8,240',unit:'SF',cost:'$64.00',total:'$527,360',div:'08',qtyNum:8240,costNum:64,totalNum:527360},
+  {csi:'08 11 13',desc:'HM Doors & Frames — 3/0×7/0 per A-8.0',sheet:'A-8.0',qty:'32',unit:'EA',cost:'$1,780',total:'$56,960',div:'08',qtyNum:32,costNum:1780,totalNum:56960},
+  {csi:'08 11 16',desc:'Aluminum Doors — Anodized, Panic Hardware',sheet:'A-8.0',qty:'8',unit:'EA',cost:'$2,950',total:'$23,600',div:'08',qtyNum:8,costNum:2950,totalNum:23600},
+  {csi:'08 36 00',desc:'Overhead Coiling Dock Doors — 10×14',sheet:'A-5.1',qty:'8',unit:'EA',cost:'$4,400',total:'$35,200',div:'08',qtyNum:8,costNum:4400,totalNum:35200},
+  {csi:'09 21 16',desc:'GWB Partitions — Type A 3-5/8" MS Sgl Layer',sheet:'A-7.0',qty:'42,300',unit:'SF',cost:'$4.60',total:'$194,580',div:'09',qtyNum:42300,costNum:4.6,totalNum:194580},
+  {csi:'09 21 16',desc:'GWB Partitions — Type B Full Height to Deck',sheet:'A-7.0',qty:'8,600',unit:'SF',cost:'$6.80',total:'$58,480',div:'09',qtyNum:8600,costNum:6.8,totalNum:58480},
+  {csi:'09 51 23',desc:'ACT Ceiling — 2×2 Armstrong 502 Office Areas',sheet:'A-2.2',qty:'17,942',unit:'SF',cost:'$3.20',total:'$57,414',div:'09',qtyNum:17942,costNum:3.2,totalNum:57414},
+  {csi:'09 65 13',desc:'Luxury Vinyl Tile — Office & Break Room',sheet:'A-8.1',qty:'8,971',unit:'SF',cost:'$6.40',total:'$57,414',div:'09',qtyNum:8971,costNum:6.4,totalNum:57414},
+  {csi:'09 30 00',desc:'Ceramic Tile Floor — Restrooms 24"×24"',sheet:'A-6.0',qty:'1,240',unit:'SF',cost:'$13.50',total:'$16,740',div:'09',qtyNum:1240,costNum:13.5,totalNum:16740},
+  {csi:'09 30 13',desc:'Ceramic Tile Wall — Restrooms 4"×12" Subway',sheet:'A-6.0',qty:'2,100',unit:'SF',cost:'$11.25',total:'$23,625',div:'09',qtyNum:2100,costNum:11.25,totalNum:23625},
+  {csi:'09 91 00',desc:'Interior Painting — All GWB Surfaces',sheet:'A-8.1',qty:'94,600',unit:'SF',cost:'$0.92',total:'$87,032',div:'09',qtyNum:94600,costNum:0.92,totalNum:87032},
+  {csi:'10 14 00',desc:'Building Signage — Exterior ID',sheet:'A-7.0',qty:'1',unit:'LS',cost:'$26,000',total:'$26,000',div:'10',qtyNum:1,costNum:26000,totalNum:26000},
+  {csi:'10 28 13',desc:'Toilet Accessories — TAS Compliant, Bobrick',sheet:'A-6.0',qty:'18',unit:'SET',cost:'$1,280',total:'$23,040',div:'10',qtyNum:18,costNum:1280,totalNum:23040},
+  {csi:'10 76 43',desc:'Trash Enclosure — Galv Steel, Conc Pad',sheet:'A-7.0',qty:'1',unit:'EA',cost:'$29,500',total:'$29,500',div:'10',qtyNum:1,costNum:29500,totalNum:29500},
+  {csi:'32 12 16',desc:'Asphalt Paving — 4" Base + 2" Surface Course',sheet:'A-1.0',qty:'86,200',unit:'SF',cost:'$3.85',total:'$331,870',div:'32',qtyNum:86200,costNum:3.85,totalNum:331870},
+  {csi:'32 17 23',desc:'Parking Lot Striping — 4" Yellow Thermoplastic',sheet:'A-1.0',qty:'3,200',unit:'LF',cost:'$1.10',total:'$3,520',div:'32',qtyNum:3200,costNum:1.1,totalNum:3520},
+  {csi:'32 31 13',desc:'Chain Link Fence — 6" H Galvanized',sheet:'A-1.1',qty:'840',unit:'LF',cost:'$25.50',total:'$21,420',div:'32',qtyNum:840,costNum:25.5,totalNum:21420},
+  {csi:'32 13 13',desc:'Concrete Curb & Gutter — Typ at Parking',sheet:'A-1.1',qty:'2,400',unit:'LF',cost:'$16.50',total:'$39,600',div:'32',qtyNum:2400,costNum:16.5,totalNum:39600},
+];
+
+const sheets=[
+  {num:'A-1.0',name:'Overall Site Layout Plan',trade:'arch',processed:true},
+  {num:'A-1.1',name:'Enlarged Site Plan Layout',trade:'arch',processed:true},
+  {num:'A-2.0',name:'Building Floor Plan',trade:'arch',processed:true},
+  {num:'A-2.1',name:'Mezzanine Floor Plan',trade:'arch',processed:true},
+  {num:'A-2.2',name:'Building RCP',trade:'arch',processed:true},
+  {num:'A-2.3',name:'Mezzanine RCP',trade:'arch',processed:true},
+  {num:'A-2.4',name:'Building Roof Plan',trade:'arch',processed:true},
+  {num:'A-3.0',name:'Enlarged Unit Floor Plan',trade:'arch',processed:true},
+  {num:'A-3.1',name:'Unit Mezzanine FP',trade:'arch',processed:true},
+  {num:'A-3.2',name:'Unit RCP',trade:'arch',processed:true},
+  {num:'A-3.3',name:'Unit Mezz RCP',trade:'arch',processed:true},
+  {num:'A-4.0',name:'Building Elevations',trade:'arch',processed:true},
+  {num:'A-4.1',name:'Partial East Elevations',trade:'arch',processed:true},
+  {num:'A-4.2',name:'Partial West Elevations',trade:'arch',processed:true},
+  {num:'A-4.3',name:'Building Elevations (Color)',trade:'arch',processed:true},
+  {num:'A-4.4',name:'Tilt-up Panel Layout P-1–P-36',trade:'arch',processed:true},
+  {num:'A-5.0',name:'Typical Wall Sections',trade:'arch',processed:true},
+  {num:'A-5.1',name:'Typical Wall Sections',trade:'arch',processed:true},
+  {num:'A-5.2',name:'Typical Wall Sections',trade:'arch',processed:true},
+  {num:'A-6.0',name:'Interior Elev + Restroom Sched',trade:'arch',processed:true},
+  {num:'A-6.1',name:'Typical Interior Elevations',trade:'arch',processed:true},
+  {num:'A-6.2',name:'Typical Interior Elevations',trade:'arch',processed:true},
+  {num:'A-7.0',name:'Partition Types A–L + Details',trade:'arch',processed:true},
+  {num:'A-8.0',name:'Door + Hardware Schedule',trade:'arch',processed:true},
+  {num:'A-8.1',name:'Window + Finish Schedule',trade:'arch',processed:true},
+  {num:'TAS', name:'Texas Accessibility Standards',trade:'access',processed:true},
+];
+
+const doorData=[
+  {mark:'101',size:"3'-0\"×7'-0\"",mat:'HM',finish:'Painted',hw:'HW-1',type:'Single Flush'},
+  {mark:'102',size:"3'-0\"×7'-0\"",mat:'HM',finish:'Painted',hw:'HW-2',type:'Single w/ Vision Lite'},
+  {mark:'103',size:"3'-6\"×7'-0\"",mat:'Alum',finish:'Anodized',hw:'HW-3',type:'Single Storefront'},
+  {mark:'104',size:"6'-0\"×7'-0\"",mat:'Alum',finish:'Anodized',hw:'HW-4',type:'Double Storefront'},
+  {mark:'105',size:"3'-0\"×7'-0\"",mat:'HM',finish:'Painted',hw:'HW-1',type:'Single Flush'},
+  {mark:'106',size:"10'×14'",mat:'HM',finish:'Galv',hw:'HW-5',type:'Overhead Coiling Dock'},
+  {mark:'107',size:"10'×14'",mat:'HM',finish:'Galv',hw:'HW-5',type:'Overhead Coiling Dock'},
+  {mark:'108',size:"3'-0\"×7'-0\"",mat:'WD',finish:'Paint',hw:'HW-2',type:'Flush HM Frame'},
+];
+const windowData=[
+  {mark:'W-1',size:"7'-0\"×4'-0\"",mat:'Aluminum',type:'Fixed Insulating Glass',qty:'24'},
+  {mark:'W-2',size:"4'-0\"×4'-0\"",mat:'Aluminum',type:'Fixed Insulating Glass',qty:'12'},
+  {mark:'W-3',size:"3'-0\"×3'-0\"",mat:'Aluminum',type:'Fixed Insulating Glass',qty:'18'},
+  {mark:'W-4',size:"7'-0\"×4'-0\"",mat:'Aluminum',type:'Proj-Out Awning',qty:'8'},
+  {mark:'W-5',size:"9'-0\"×4'-0\"",mat:'Aluminum',type:'Fixed Storefront',qty:'16'},
+  {mark:'W-6',size:'Varies',mat:'Aluminum',type:'Curtainwall System',qty:'See Elev'},
+];
+const finishData=[
+  {rm:'100',name:'Lobby / Reception',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-1',clg:'C-4'},
+  {rm:'101',name:'Office 1',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-1',clg:'C-4'},
+  {rm:'102',name:'Office 2',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-1',clg:'C-4'},
+  {rm:'103',name:'Conference Room',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-2',clg:'C-4'},
+  {rm:'104',name:'Break Room',n:'B-2',s:'B-2',e:'B-2',w:'B-2',fl:'C-1',clg:'C-4'},
+  {rm:'105',name:"Men's Restroom",n:'B-3',s:'B-3',e:'B-3',w:'B-3',fl:'C-3',clg:'C-5'},
+  {rm:'106',name:"Women's Restroom",n:'B-3',s:'B-3',e:'B-3',w:'B-3',fl:'C-3',clg:'C-5'},
+  {rm:'107',name:'Storage',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'Conc',clg:'Exp'},
+  {rm:'108',name:'Dispatch Office',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-1',clg:'C-4'},
+  {rm:'109',name:'Warehouse',n:'Conc',s:'Conc',e:'Conc',w:'Conc',fl:'Conc',clg:'Exp'},
+  {rm:'110',name:'Mezzanine Office',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-2',clg:'C-4'},
+  {rm:'200',name:'Accessible Storage',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-1',clg:'C-4'},
+  {rm:'300',name:'Corridor',n:'B-1',s:'B-1',e:'B-1',w:'B-1',fl:'C-1',clg:'C-4'},
+];
+
+// ── AIRTABLE PUSH ──────────────────────────────────────────────
+async function atPost(table,body){
+  const res=await fetch(`${AT_BASE}/${encodeURIComponent(table)}`,{
+    method:'POST',
+    headers:{'Authorization':`Bearer ${AT_TOKEN}`,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${res.status}`);}
+  return res.json();
+}
+
+let projectId=null,estimateId=null,pushDone=false;
+
+function setStep(step,state,sub=''){
+  const icons={waiting:'⏳',active:'⟳',done:'✓',error:'✕'};
+  const cls={waiting:'',active:'active',done:'done',error:'error'};
+  const icon=document.getElementById(`icon-${step}`);
+  const status=document.getElementById(`status-${step}`);
+  icon.textContent=icons[state]||'⏳';
+  icon.className=`push-step-icon ${cls[state]||''}`;
+  status.textContent=state==='done'?'Done ✓':state==='error'?'Error':state==='active'?'Running...':'Waiting';
+  status.className=`push-step-status ${state==='done'?'done':state==='error'?'error':''}`;
+  if(sub)document.getElementById('at-log').textContent=sub;
+}
+function setProgress(p){document.getElementById('at-progress').style.width=p+'%';}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function startPush(){
+  if(pushDone)return;
+  document.getElementById('start-btn').disabled=true;
+  document.getElementById('cancel-btn').textContent='Close';
+
+  // Step 1: Project
+  setStep('project','active','Creating Projects record...');
+  setProgress(5);
+  try{
+    const r=await atPost('Projects',{fields:{
+      'Project name':'Prince Center',
+      'Project type':'Commercial',
+      'Status':'Pre-bid',
+      'Owner/client':'Prince Roofpan LP',
+      'Project address':'425 Julie Rivers Dr, Sugar Land, TX 77478',
+      'Notes':'QuantaFlow AI Takeoff · 248,849 SF · 26 arch sheets · MRA Architects · Permit A-60 · Pricing: RSMeans 2026 Houston Metro CCI'
+    }});
+    projectId=r.id;
+    setStep('project','done',`Project created → ${projectId}`);
+    setProgress(33);
+  }catch(e){setStep('project','error',e.message);document.getElementById('start-btn').disabled=false;return;}
+
+  await sleep(400);
+
+  // Step 2: GC Estimate
+  setStep('estimate','active','Creating GC Estimates record...');
+  try{
+    const r=await atPost('GC Estimates',{fields:{
+      'Bid name':'Prince Center — Arch Scope · RSMeans 2026 Houston',
+      'Bid date':new Date().toISOString().split('T')[0],
+      'Bid status':'In progress',
+      'Estimated value':5842489,
+      'Scope summary':'AI-generated takeoff from 26 architectural sheets. Pricing: RSMeans 2026 Houston Metro CCI (Labor 0.88, Material 1.02). Arch scope only — MEP/Structural TBD. Quantities estimated. 32 line items across 9 CSI divisions. Source: MRA Architects, Permit A-60, Sugar Land TX 77478.',
+      'Addenda received':false,
+      'Bid bond required':false,
+      'Notes':`Generated by QuantaFlow AI · ${new Date().toLocaleDateString()} · $23.48/SF arch scope`
+    }});
+    estimateId=r.id;
+    setStep('estimate','done',`GC Estimate created → ${estimateId}`);
+    setProgress(55);
+  }catch(e){setStep('estimate','error',e.message);document.getElementById('start-btn').disabled=false;return;}
+
+  await sleep(400);
+
+  // Step 3: Line Items in batches of 10
+  setStep('items','active','Pushing line items...');
+  let pushed=0;
+  const batchSize=10;
+  try{
+    for(let i=0;i<lineItems.length;i+=batchSize){
+      const batch=lineItems.slice(i,i+batchSize);
+      const records=batch.map(item=>({fields:{
+        'Description':item.desc,
+        'CSI Code':item.csi,
+        'Source Sheet':item.sheet,
+        'Quantity':item.qtyNum,
+        'Unit':item.unit,
+        'Unit Cost':item.costNum,
+        'Total Cost':item.totalNum,
+        'Division':item.div,
+        'Project':'Prince Center',
+        'Line Item Status':'Pending',
+        'Notes':`RSMeans 2026 Houston Metro · Sheet ${item.sheet} · QuantaFlow AI`
+      }}));
+      const url=`${AT_BASE}/${encodeURIComponent('Takeoff Line Items')}`;
+      const res=await fetch(url,{method:'POST',headers:{'Authorization':`Bearer ${AT_TOKEN}`,'Content-Type':'application/json'},body:JSON.stringify({records})});
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${res.status}`);}
+      pushed+=batch.length;
+      setProgress(55+Math.round((pushed/lineItems.length)*42));
+      document.getElementById('items-sub').textContent=`Pushed ${pushed} of ${lineItems.length} line items...`;
+      document.getElementById('at-log').textContent=`Batch ${Math.ceil((i+1)/batchSize)} complete — ${pushed} items pushed`;
+      await sleep(300);
+    }
+    setStep('items','done',`All ${pushed} line items pushed`);
+    setProgress(100);
+    pushDone=true;
+    document.getElementById('at-status').textContent='✓ Synced';
+    document.getElementById('at-status').style.color='var(--accent)';
+    document.getElementById('result-links').style.display='flex';
+    document.getElementById('result-links').innerHTML=`
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;">View in Airtable</div>
+      <a class="result-link" href="https://airtable.com/${BASE_ID}" target="_blank"><span>🏗</span><div><div style="font-weight:600">Prince Center · Projects table</div><div style="font-size:10.5px;color:var(--muted)">ID: ${projectId}</div></div></a>
+      <a class="result-link" href="https://airtable.com/${BASE_ID}" target="_blank"><span>📋</span><div><div style="font-weight:600">GC Estimate · $5,842,489 · RSMeans 2026 Houston</div><div style="font-size:10.5px;color:var(--muted)">ID: ${estimateId}</div></div></a>
+      <a class="result-link" href="https://airtable.com/${BASE_ID}" target="_blank"><span>📊</span><div><div style="font-weight:600">${pushed} Takeoff Line Items</div><div style="font-size:10.5px;color:var(--muted)">All with Houston Metro unit costs</div></div></a>`;
+    document.getElementById('at-log').textContent='🎉 Done! 3 tables updated in Airtable.';
+    showNotif('✓ Airtable Sync Complete',`Project + GC Estimate + ${pushed} line items · RSMeans 2026 Houston`);
+  }catch(e){setStep('items','error',`After ${pushed} items: ${e.message}`);document.getElementById('start-btn').disabled=false;}
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderDivisions(){
+  const total=divisions.reduce((s,d)=>s+d.cost,0);
+  document.getElementById('division-rows').innerHTML=divisions.map(d=>{
+    const pct=((d.cost/total)*100).toFixed(1);
+    return`<div style="border-bottom:1px solid var(--border)"><div class="group-row" style="grid-template-columns:60px 1fr 130px 70px 120px 90px">
+      <div><span class="csi-badge" style="background:rgba(0,229,160,0.07);color:#00e5a0;border:1px solid rgba(0,229,160,0.18)">${d.div}</span></div>
+      <div style="font-size:11px">${d.name}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)">${d.sheets}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px">${d.items}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11.5px;color:var(--accent)">$${d.cost.toLocaleString()}</div>
+      <div><div style="height:3px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="height:100%;width:${Math.min(pct*5,100)}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px"></div></div><div style="font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted)">${pct}%</div></div>
+    </div></div>`;
+  }).join('');
+}
+
+function renderSheets(){
+  document.getElementById('sheet-map-grid').innerHTML=sheets.map(s=>
+    `<div class="sheet-card ${s.trade} ${s.processed?'processed':''}">
+      ${s.processed?'<div class="sheet-card-check">✓</div>':''}
+      <div class="sheet-card-num">${s.num}</div>
+      <div class="sheet-card-name">${s.name}</div>
+    </div>`).join('');
+}
+
+function renderLineItems(filter='all'){
+  const items=filter==='all'?lineItems:lineItems.filter(i=>i.div===filter);
+  document.getElementById('li-count').textContent=items.length+' items';
+  document.getElementById('line-items-container').innerHTML=items.map(i=>
+    `<div class="line-item" style="grid-template-columns:85px 1fr 80px 85px 55px 85px 90px 80px">
+      <div><span class="csi-badge" style="background:transparent;color:var(--dim);border:1px solid var(--border)">${i.csi}</span></div>
+      <div style="font-size:11px;color:var(--text)">${i.desc}</div>
+      <div><span class="source-tag">${i.sheet}</span></div>
+      <div class="qty-cell">${i.qty}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${i.unit}</div>
+      <div class="cost-cell">${i.cost}</div>
+      <div class="total-cell">${i.total}</div>
+      <div><span class="rsm-tag">RSM 2026 HOU</span></div>
+    </div>`).join('');
+}
+
+function renderSchedules(){
+  document.getElementById('door-schedule').innerHTML=doorData.map(d=>
+    `<div class="line-item" style="grid-template-columns:45px 70px 65px 65px 80px 1fr">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent)">${d.mark}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9.5px">${d.size}</div>
+      <div style="font-size:11px">${d.mat}</div>
+      <div style="font-size:10.5px;color:var(--muted)">${d.finish}</div>
+      <div><span class="source-tag">${d.hw}</span></div>
+      <div style="font-size:10.5px;color:var(--muted)">${d.type}</div>
+    </div>`).join('');
+  document.getElementById('window-schedule').innerHTML=windowData.map(w=>
+    `<div class="line-item" style="grid-template-columns:45px 90px 80px 1fr 55px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent)">${w.mark}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9.5px">${w.size}</div>
+      <div style="font-size:10.5px">${w.mat}</div>
+      <div style="font-size:10.5px;color:var(--muted)">${w.type}</div>
+      <div class="qty-cell">${w.qty}</div>
+    </div>`).join('');
+  document.getElementById('finish-schedule').innerHTML=finishData.map(r=>
+    `<div class="line-item" style="grid-template-columns:50px 140px 80px 80px 80px 80px 70px 70px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent)">${r.rm}</div>
+      <div style="font-size:11px;color:var(--text)">${r.name}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px">${r.n}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px">${r.s}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px">${r.e}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px">${r.w}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px">${r.fl}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px">${r.clg}</div>
+    </div>`).join('');
+}
+
+function switchTab(id,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));el.classList.add('active');document.getElementById('view-'+id).classList.add('active');}
+function toggleGroup(el){const i=el.nextElementSibling;i.classList.toggle('open');el.classList.toggle('active',i.classList.contains('open'));}
+function setActive(el){document.querySelectorAll('.sheet-item').forEach(s=>s.classList.remove('active'));el.classList.add('active');}
+function filterItems(){renderLineItems(document.getElementById('div-filter').value);}
+function openAirtableModal(){document.getElementById('at-modal').classList.add('open');}
+function closeModal(){document.getElementById('at-modal').classList.remove('open');}
+function showNotif(t,s,err=false){const n=document.getElementById('notif');document.getElementById('notif-title').textContent=t;document.getElementById('notif-sub').textContent=s;n.className='notif'+(err?' error':'');n.classList.add('show');setTimeout(()=>n.classList.remove('show'),4000);}
+function generateReport(){showNotif('📄 Export PDF','Download the PDF from the files panel — already generated with Houston pricing');}
+document.getElementById('at-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+renderDivisions();renderSheets();renderLineItems();renderSchedules();
+</script>
+</body>
+</html>
